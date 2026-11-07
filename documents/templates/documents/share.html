@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Document - TrustVault</title>
+</head>
+<body>
+    <h1>Share: {{ document.title }}</h1>
+
+    {% for message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Viewer username</label>
+        <input type="text" name="username" required>
+
+        <label>Permission</label>
+        <select name="access_level">
+            <option value="READ">Read</option>
+            <option value="EDIT">Edit</option>
+        </select>
+
+        <button type="submit">Grant Access</button>
+    </form>
+
+    <h2>Active permissions</h2>
+
+    {% for permission in permissions %}
+        <div>
+            <p>
+                {{ permission.user.username }} — {{ permission.access_level }}
+            </p>
+
+            <form method="POST"
+                  action="{% url 'revoke_access' document.id permission.id %}">
+                {% csrf_token %}
+                <button type="submit">Revoke</button>
+            </form>
+        </div>
+    {% empty %}
+        <p>No active permissions.</p>
+    {% endfor %}
+
+    <a href="{% url 'document_list' %}">Back to documents</a>
+</body>
+</html>

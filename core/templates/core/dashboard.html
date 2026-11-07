@@ -1,0 +1,70 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            color: #172b4d;
+        }
+
+        header {
+            background: #172b4d;
+            color: white;
+            padding: 20px 35px;
+        }
+
+        main {
+            padding: 35px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-top: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <form method="POST" action="{% url 'logout' %}" style="float: right;">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+
+        <h2>TrustVault</h2>
+        <p>Secure Document Management</p>
+    </header>
+
+    <main>
+        <h1>Welcome, {{ request.user.username }}!</h1>
+
+        <div class="card">
+            <h2>Your Dashboard</h2>
+            <p>Your secure document workspace is ready.</p>
+
+            <p>
+                <a href="{% url 'document_list' %}">My Documents</a>
+            </p>
+
+            {% if request.user.role == "OWNER" or request.user.role == "ADMIN" %}
+            <p>
+                <a href="{% url 'document_upload' %}">Upload Document</a>
+            </p>
+            {% endif %}
+
+            <p>Role: {{ request.user.role }}</p>
+        </div>
+    </main>
+</body>
+</html>
+```

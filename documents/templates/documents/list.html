@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault - My Documents</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            margin: 0;
+            color: #172b4d;
+        }
+
+        header {
+            background: #172b4d;
+            color: white;
+            padding: 20px 35px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 35px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        input {
+            padding: 11px;
+            width: 65%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 11px 20px;
+            background: #2456a6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .document {
+            padding: 18px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        a {
+            color: #2456a6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>TrustVault</h2>
+    <p>Secure Document Management</p>
+</header>
+
+<div class="container">
+
+    <h1>My Documents</h1>
+
+    <form method="GET">
+        <input
+            type="text"
+            name="q"
+            placeholder="Search documents..."
+            value="{{ search_query }}"
+        >
+        <button type="submit">Search</button>
+    </form>
+
+    {% if request.user.role == "OWNER" or request.user.role == "ADMIN" %}
+    <p>
+        <a href="{% url 'document_upload' %}">Upload New Document</a>
+    </p>
+    {% endif %}
+
+    {% for document in documents %}
+        <div class="document">
+            <h3>{{ document.title }}</h3>
+            <p>{{ document.description }}</p>
+            <p>Owner: {{ document.owner.username }}</p>
+
+            <p>
+                <a href="{% url 'download_document' document.id %}">
+                    Download PDF
+                </a>
+            </p>
+
+            {% if request.user == document.owner %}
+                <p>
+                    <a href="{% url 'share_document' document.id %}">
+                        Share / Manage Access
+                    </a>
+                </p>
+
+                <p>
+                    <a href="{% url 'edit_document' document.id %}">
+                        Edit Document
+                    </a>
+                </p>
+            {% else %}
+                {% for permission in document.permissions.all %}
+                    {% if permission.user_id == request.user.id and permission.is_active and permission.access_level == "EDIT" %}
+                        <p>
+                            <a href="{% url 'edit_document' document.id %}">
+                                Edit Document
+                            </a>
+                        </p>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No documents found.</p>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>

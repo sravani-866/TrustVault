@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault - Upload Document</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            color: #172b4d;
+        }
+
+        header {
+            background: #172b4d;
+            color: white;
+            padding: 22px 35px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #2456a6;
+            color: white;
+            padding: 13px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #173d7a;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>TrustVault</h2>
+    <p>Secure Document Management</p>
+</header>
+
+<div class="container">
+    <h1>Upload Document</h1>
+    <p>Upload your PDF securely. Maximum size: 5 MB.</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <label>Document Title</label>
+        {{ form.title }}
+        <div class="error">{{ form.title.errors }}</div>
+
+        <label>Description</label>
+        {{ form.description }}
+        <div class="error">{{ form.description.errors }}</div>
+
+        <label>Select PDF File</label>
+        {{ form.file }}
+        <div class="error">{{ form.file.errors }}</div>
+
+        <button type="submit">Upload Document</button>
+    </form>
+</div>
+
+</body>
+</html>
