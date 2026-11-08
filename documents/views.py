@@ -15,7 +15,7 @@ from audit.services import record_activity
 
 @login_required
 def upload_document(request):
-    if request.user.role != "OWNER":
+    if request.user.role not in ["OWNER", "ADMIN"]:
         return HttpResponseForbidden("Not authorized to upload.")
 
     if request.method == "POST":
