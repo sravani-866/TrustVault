@@ -80,6 +80,13 @@ def download_document(request, document_id):
     )
 
     if not has_access:
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            document=document,
+            details={"attempted_action": "DOCUMENT_DOWNLOAD"},
+            request=request
+        )
         return HttpResponseForbidden("Not authorized.")
 
     record_activity(
@@ -110,6 +117,13 @@ def edit_document(request, document_id):
     ).exists()
 
     if not (is_owner or has_edit_permission):
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            document=document,
+            details={"attempted_action": "DOCUMENT_EDIT"},
+            request=request
+        )
         return HttpResponseForbidden(
             "You do not have permission to edit this document."
         )

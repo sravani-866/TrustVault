@@ -246,3 +246,43 @@ class DocumentSecurityTests(TestCase):
                 action="DOCUMENT_EDITED"
             ).exists()
         )
+
+    def test_denied_download_is_recorded_in_audit_log(self):
+        self.client.login(
+            username="viewer_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(
+            reverse("download_document", args=[self.document.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                document=self.document,
+                action="ACCESS_DENIED",
+                details__attempted_action="DOCUMENT_DOWNLOAD"
+            ).exists()
+        )
+
+    def test_denied_edit_is_recorded_in_audit_log(self):
+        self.client.login(
+            username="viewer_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(self.edit_url())
+
+        self.assertEqual(response.status_code, 403)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                document=self.document,
+                action="ACCESS_DENIED",
+                details__attempted_action="DOCUMENT_EDIT"
+            ).exists()
+        )
