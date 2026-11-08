@@ -252,3 +252,45 @@ def revoke_access(request, document_id, permission_id):
         messages.success(request, "Document access revoked!")
 
     return redirect("share_document", document_id=document.id)
+
+
+@login_required
+@require_POST
+def delete_document(request, document_id):
+    document = get_object_or_404(Document, id=document_id)
+
+    if document.owner_id != request.user.id:
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            document=document,
+            details={"attempted_action": "DOCUMENT_DELETE"},
+            request=request
+        )
+        return HttpResponseForbidden(
+            "You do not have permission to delete this document."
+        )
+
+    file_name = document.file.name
+    storage = document.file.storage
+
+    with transaction.atomic():
+        record_activity(
+            actor=request.user,
+            action="DOCUMENT_DELETED",
+            document=document,
+            details={
+                "title": document.title,
+                "document_id": str(document.id)
+            },
+            request=request
+        )
+
+        document.delete()
+
+        transaction.on_commit(
+            lambda: storage.delete(file_name)
+        )
+
+    messages.success(request, "Document deleted successfully!")
+    return redirect("document_list")

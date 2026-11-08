@@ -108,6 +108,13 @@
                         Edit Document
                     </a>
                 </p>
+                <form method="POST" action="{% url 'delete_document' document.id %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                        onclick="return confirm('Are you sure you want to delete this document?');">
+                        Delete Document
+                    </button>
+                </form>    
             {% else %}
                 {% for permission in document.permissions.all %}
                     {% if permission.user_id == request.user.id and permission.is_active and permission.access_level == "EDIT" %}

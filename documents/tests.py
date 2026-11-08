@@ -286,3 +286,54 @@ class DocumentSecurityTests(TestCase):
                 details__attempted_action="DOCUMENT_EDIT"
             ).exists()
         )
+
+    def test_owner_can_delete_document_and_audit_is_recorded(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        document_id = self.document.id
+
+        response = self.client.post(
+            reverse("delete_document", args=[document_id])
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.assertFalse(
+            Document.objects.filter(id=document_id).exists()
+        )
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.owner,
+                action="DOCUMENT_DELETED",
+                details__document_id=str(document_id)
+            ).exists()
+        )
+
+    def test_viewer_cannot_delete_document_and_denial_is_recorded(self):
+        self.client.login(
+            username="viewer_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.post(
+            reverse("delete_document", args=[self.document.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.assertTrue(
+            Document.objects.filter(id=self.document.id).exists()
+        )
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                document=self.document,
+                action="ACCESS_DENIED",
+                details__attempted_action="DOCUMENT_DELETE"
+            ).exists()
+        )

@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path("upload/", views.upload_document, name="document_upload"),
+    path("delete/<uuid:document_id>/", views.delete_document, name="delete_document"),
     path("", views.document_list, name="document_list"),
 
     path(
