@@ -129,6 +129,14 @@ class DocumentSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                action="ACCESS_DENIED",
+                details__attempted_action="DOCUMENT_UPLOAD"
+            ).exists()
+        )
+
     def test_download_is_recorded_in_audit_log(self):
         self.client.login(
             username="owner_test",
@@ -161,6 +169,7 @@ class DocumentSecurityTests(TestCase):
             self.edit_url(),
             {
                 "title": "Owner Updated Document",
+                "category": "GENERAL",
                 "description": "Updated by owner"
             }
         )
@@ -185,6 +194,7 @@ class DocumentSecurityTests(TestCase):
             self.edit_url(),
             {
                 "title": "Viewer Edited Document",
+                "category": "GENERAL",
                 "description": "Updated by editor"
             }
         )
@@ -233,6 +243,7 @@ class DocumentSecurityTests(TestCase):
             self.edit_url(),
             {
                 "title": "Audited Document Edit",
+                "category": "GENERAL",
                 "description": "Audit test"
             }
         )
@@ -337,3 +348,192 @@ class DocumentSecurityTests(TestCase):
                 details__attempted_action="DOCUMENT_DELETE"
             ).exists()
         )
+
+    def test_search_documents_by_name(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(
+            reverse("document_list"),
+            {"q": "Security Test"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Security Test PDF")
+
+    def test_filter_documents_by_owner(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(
+            reverse("document_list"),
+            {"owner": "owner_test"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Security Test PDF")
+
+    def test_filter_documents_by_category(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(
+            reverse("document_list"),
+            {"category": "GENERAL"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Security Test PDF")
+
+    def test_filter_documents_by_upload_date(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        selected_date = self.document.uploaded_at.date().isoformat()
+
+        response = self.client.get(
+            reverse("document_list"),
+            {"date": selected_date}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Security Test PDF")
+
+    def test_document_share_is_recorded_in_audit_log(self):
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.post(
+            reverse("share_document", args=[self.document.id]),
+            {
+                "username": "viewer_test",
+                "access_level": "READ"
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.owner,
+                document=self.document,
+                action="DOCUMENT_SHARED",
+                details__shared_with="viewer_test",
+                details__access_level="READ"
+            ).exists()
+        )
+
+    def test_access_revoke_is_recorded_in_audit_log(self):
+        permission = self.grant_permission("READ")
+
+        self.client.login(
+            username="owner_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.post(
+            reverse(
+                "revoke_access",
+                args=[self.document.id, permission.id]
+            )
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        permission.refresh_from_db()
+        self.assertFalse(permission.is_active)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.owner,
+                document=self.document,
+                action="ACCESS_REVOKED",
+                details__revoked_from="viewer_test"
+            ).exists()
+        )
+
+    def test_viewer_cannot_revoke_access_and_denial_is_recorded(self):
+        permission = self.grant_permission("READ")
+
+        self.client.login(
+            username="viewer_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.post(
+            reverse(
+                "revoke_access",
+                args=[self.document.id, permission.id]
+            )
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                document=self.document,
+                action="ACCESS_DENIED",
+                details__attempted_action="ACCESS_REVOKE"
+            ).exists()
+        )
+
+    def test_audit_log_cannot_be_modified(self):
+        audit_log = AuditLog.objects.create(
+            actor=self.owner,
+            document=self.document,
+            action="TEST_EVENT"
+        )
+
+        audit_log.action = "MODIFIED_EVENT"
+
+        with self.assertRaises(ValueError):
+            audit_log.save()
+
+        audit_log.refresh_from_db()
+        self.assertEqual(audit_log.action, "TEST_EVENT")
+
+    def test_audit_log_cannot_be_deleted(self):
+        audit_log = AuditLog.objects.create(
+            actor=self.owner,
+            document=self.document,
+            action="TEST_EVENT"
+        )
+
+        with self.assertRaises(ValueError):
+            audit_log.delete()
+
+        self.assertTrue(
+            AuditLog.objects.filter(pk=audit_log.pk).exists()
+        )    
+        
+    def test_viewer_cannot_share_document_and_denial_is_recorded(self):
+        self.client.login(
+            username="viewer_test",
+            password="TestPass123!"
+        )
+
+        response = self.client.get(
+            reverse("share_document", args=[self.document.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.viewer,
+                document=self.document,
+                action="ACCESS_DENIED",
+                details__attempted_action="DOCUMENT_SHARE"
+            ).exists()
+        )        

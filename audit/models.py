@@ -33,3 +33,11 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} - {self.timestamp}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and AuditLog.objects.filter(pk=self.pk).exists():
+            raise ValueError("Audit logs cannot be modified.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Audit logs cannot be deleted.")

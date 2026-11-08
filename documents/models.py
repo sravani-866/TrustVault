@@ -17,6 +17,22 @@ class Document(models.Model):
     )
 
     title = models.CharField(max_length=200)
+
+    CATEGORY_CHOICES = [
+        ("GENERAL", "General"),
+        ("FINANCE", "Finance"),
+        ("LEGAL", "Legal"),
+        ("HR", "Human Resources"),
+        ("TECHNICAL", "Technical"),
+        ("OTHER", "Other"),
+    ]
+
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default="GENERAL"
+    )
+
     description = models.TextField(blank=True)
 
     file = models.FileField(

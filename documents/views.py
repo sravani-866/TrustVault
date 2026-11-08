@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden, FileResponse
 from django.db import transaction
 from django.db.models import Q
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
@@ -16,6 +17,14 @@ from audit.services import record_activity
 @login_required
 def upload_document(request):
     if request.user.role not in ["OWNER", "ADMIN"]:
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            details={
+                "attempted_action": "DOCUMENT_UPLOAD"
+            },
+            request=request
+        )
         return HttpResponseForbidden("Not authorized to upload.")
 
     if request.method == "POST":
@@ -42,11 +51,14 @@ def upload_document(request):
 
     return render(request, "documents/upload.html", {"form": form})
 
-
 @login_required
 def document_list(request):
     search_query = request.GET.get("q", "").strip()
+    owner_query = request.GET.get("owner", "").strip()
+    category_query = request.GET.get("category", "").strip()
+    date_query = request.GET.get("date", "").strip()
 
+    # Show only owned or actively shared documents
     documents = Document.objects.filter(
         Q(owner=request.user) |
         Q(
@@ -55,16 +67,43 @@ def document_list(request):
         )
     ).distinct()
 
+    # Search by document name
     if search_query:
         documents = documents.filter(
             title__icontains=search_query
         )
 
+    # Search by owner username
+    if owner_query:
+        documents = documents.filter(
+            owner__username__icontains=owner_query
+        )
+
+    # Filter by category
+    if category_query in dict(Document.CATEGORY_CHOICES):
+        documents = documents.filter(
+            category=category_query
+        )
+
+    # Filter by upload date
+    if date_query:
+        selected_date = parse_date(date_query)
+
+        if selected_date:
+            documents = documents.filter(
+                uploaded_at__date=selected_date
+            )
+
+    documents = documents.order_by("-uploaded_at")
+
     return render(request, "documents/list.html", {
         "documents": documents,
-        "search_query": search_query
+        "search_query": search_query,
+        "owner_query": owner_query,
+        "category_query": category_query,
+        "date_query": date_query,
+        "category_choices": Document.CATEGORY_CHOICES,
     })
-
 
 @login_required
 def download_document(request, document_id):
@@ -163,11 +202,18 @@ def edit_document(request, document_id):
 
 @login_required
 def share_document(request, document_id):
-    document = get_object_or_404(
-        Document,
-        id=document_id,
-        owner=request.user
-    )
+    document = get_object_or_404(Document, id=document_id)
+    if document.owner_id != request.user.id:
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            document=document,
+            details={
+                "attempted_action": "DOCUMENT_SHARE"
+            },
+            request=request
+        )
+        return HttpResponseForbidden("Not authorized to share.")
 
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
@@ -222,11 +268,20 @@ def share_document(request, document_id):
 @login_required
 @require_POST
 def revoke_access(request, document_id, permission_id):
-    document = get_object_or_404(
-        Document,
-        id=document_id,
-        owner=request.user
-    )
+    document = get_object_or_404(Document, id=document_id)
+
+    if document.owner_id != request.user.id:
+        record_activity(
+            actor=request.user,
+            action="ACCESS_DENIED",
+            document=document,
+            details={
+                "attempted_action": "ACCESS_REVOKE",
+                "permission_id": permission_id
+            },
+            request=request
+        )
+        return HttpResponseForbidden("Not authorized to revoke access.")
 
     permission = get_object_or_404(
         DocumentPermission,

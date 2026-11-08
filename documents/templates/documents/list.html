@@ -69,14 +69,49 @@
     <h1>My Documents</h1>
 
     <form method="GET">
+    <div style="margin-bottom: 12px;">
         <input
             type="text"
             name="q"
-            placeholder="Search documents..."
+            placeholder="Search by document name..."
             value="{{ search_query }}"
         >
-        <button type="submit">Search</button>
-    </form>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <input
+            type="text"
+            name="owner"
+            placeholder="Search by owner username..."
+            value="{{ owner_query }}"
+        >
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <select name="category" style="padding: 11px; width: 68%; border: 1px solid #ccc; border-radius: 6px;">
+            <option value="">All Categories</option>
+            {% for value, label in category_choices %}
+                <option value="{{ value }}" {% if category_query == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label for="date">Upload Date:</label>
+        <input
+            type="date"
+            id="date"
+            name="date"
+            value="{{ date_query }}"
+        >
+    </div>
+
+    <button type="submit">Search / Filter</button>
+    <a href="{% url 'document_list' %}" style="margin-left: 10px;">Clear Filters</a>
+</form>
+            
 
     {% if request.user.role == "OWNER" or request.user.role == "ADMIN" %}
     <p>
@@ -89,7 +124,7 @@
             <h3>{{ document.title }}</h3>
             <p>{{ document.description }}</p>
             <p>Owner: {{ document.owner.username }}</p>
-
+            <p>Category: {{ document.get_category_display }}</p>
             <p>
                 <a href="{% url 'download_document' document.id %}">
                     Download PDF

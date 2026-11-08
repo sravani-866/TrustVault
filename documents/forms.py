@@ -44,14 +44,14 @@ class DocumentUploadForm(PDFValidationMixin, forms.ModelForm):
 
     class Meta:
         model = Document
-        fields = ["title", "description", "file"]
+        fields = ["title", "category", "description", "file"]
 
 
 class DocumentEditForm(PDFValidationMixin, forms.ModelForm):
 
     class Meta:
         model = Document
-        fields = ["title", "description", "file"]
+        fields = ["title", "category", "description", "file"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
