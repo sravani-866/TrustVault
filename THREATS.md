@@ -128,22 +128,19 @@ Command:
 `python manage.py test documents`
 
 Result: 6 tests passed.
-
 ## 7. Production Security Improvements
 
-Before production deployment:
+The application is deployed with PostgreSQL and Supabase private object storage configured.
 
-- Use HTTPS.
-- Configure secure cookies.
-- Use PostgreSQL.
-- Store documents in private object storage.
-- Add malware scanning and robust file parsing.
+Further production security improvements may include:
+
+- Enforce HTTPS and secure cookies.
+- Add malware scanning and robust PDF parsing.
 - Restrict database access.
-- Add rate limiting and MFA.
+- Add rate limiting, MFA and account security monitoring.
 - Implement external append-only audit storage.
-- Configure backups and monitoring.
+- Configure regular backups and monitoring.
 - Perform an independent security review.
-
 ## 8. Conclusion
 
 TrustVault implements basic server-side access control, private document handling, permission revocation and audit recording. Automated tests verify key authorization scenarios. Additional security hardening is necessary before production use.

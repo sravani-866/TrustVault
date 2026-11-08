@@ -15,7 +15,7 @@ TrustVault is a Django-based secure document management application. It allows d
 - READ and EDIT permission levels.
 - Permission revocation.
 - Server-side authorization for document downloads.
-- Audit logging for uploads, downloads, sharing and revocation.
+- Audit logging for uploads, downloads, sharing, revocation and document edits.
 - Django Admin interface for user, document and audit management.
 - Automated security tests.
 
@@ -23,7 +23,9 @@ TrustVault is a Django-based secure document management application. It allows d
 
 - Python
 - Django
-- SQLite (development database)
+- SQLite (local development database)
+- PostgreSQL (production database)
+- Supabase private object storage (production file storage)
 - HTML and CSS
 - Django ORM
 - Django automated testing framework
@@ -96,18 +98,17 @@ The document security test suite covers owner downloads, unauthorized downloads,
 
 ## Important Limitations
 
-This is a development-stage project. Before production deployment, additional work is required:
+Core functionality has been implemented and deployed. Further security and operational improvements may include:
 
-- Configure PostgreSQL or another production database.
 - Configure HTTPS and secure production cookies.
 - Add malware scanning and robust PDF parsing.
-- Configure secure private object storage.
 - Add rate limiting and stronger operational monitoring.
 - Review production secret management and backup procedures.
-- Add comprehensive tests for sharing, revocation, upload validation and administrator permissions.
+- Expand automated tests for additional security edge cases.
 
-The development server and SQLite database are not intended for production use.
+PostgreSQL and Supabase private object storage are already configured for production.
 
+The development server and SQLite database are intended for local development only.
 ## Project Structure
 
 - `accounts/` – Custom user model and user administration.
